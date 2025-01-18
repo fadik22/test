@@ -6,7 +6,47 @@ bot = telebot.TeleBot(token)
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    bot.reply_to(message, "Привет! Я бот для управления чатом.")
+    bot.reply_to(message, "Привет! Я бот для управления чатом. Введите команду /help, чтобы узнать, как я работаю.")
+
+@bot.message_handler(commands=['help'])
+def help(message):
+    bot.reply_to(message, "/start - начать работу с ботом\n/ban - забанить пользователя\n/unban - разбанить пользователя")
+
+
+@bot.message_handler(commands=['unban'])
+def unban_user(message):
+    if message.reply_to_message:  # Проверка, что команда вызвана в ответ на сообщение
+        chat_id = message.chat.id  # ID чата
+        user_id = message.reply_to_message.from_user.id  # ID пользователя, которого разбанить
+        chat = bot.get_chat(chat_id)  # Получение информации о чате
+
+        try:
+            # Проверяем тип чата
+            if chat.type not in ['supergroup', 'channel']:
+                bot.reply_to(message, "Команда доступна только в супергруппах или каналах.")
+                return
+            
+            user_status = bot.get_chat_member(chat_id, user_id).status  # Статус пользователя в чате
+
+            # Проверяем, что пользователь не администратор или создатель чата
+            if user_status in ['administrator', 'creator']:
+                bot.reply_to(message, "Невозможно разбанить администратора или создателя чата.")
+            else:
+                # Разбаниваем пользователя
+                bot.unban_chat_member(chat_id, user_id)
+                username = message.reply_to_message.from_user.username
+                if username:
+                    bot.reply_to(message, f"Пользователь @{username} был разбанен.")
+                else:
+                    bot.reply_to(message, "Пользователь был разбанен.")
+        except Exception as e:
+            bot.reply_to(message, f"Произошла ошибка: {e}")
+    else:
+        bot.reply_to(message, "Команда должна быть выполнена в ответ на сообщение пользователя.")
+
+
+
+
 
 @bot.message_handler(commands=['ban'])
 def ban_user(message):
